@@ -1,10 +1,10 @@
 const userIdsKey = "user-ids";
 const maxInputs = 10;
 let inputIds =
-  JSON.parse(localStorage.getItem(userIdsKey)) ||
+  (JSON.parse(localStorage.getItem(userIdsKey)) ||
   [
     //   572, 607, 1340, 3092, 4005, 4646, 5982, 6869, 7128, 7339, 8614, 8868,
-  ].slice(0, maxInputs);
+  ]).slice(0, maxInputs);
 const gnogons = {};
 
 const el = document.createElement("div");
@@ -205,16 +205,20 @@ const renderInput = () => {
         <div class="container mt-3">
             <div class="row d-flex gap-0">
                 <div class="col">
-                    <code class="h-100">
-                        <p class="bg-dark text-light mb-0 px-2 py-2">Function to calculate POWER</p>
-                        <pre class="bg-dark text-warning px-2 py-2 mb-0 h-100">${getPower.toString()}</pre>
+                  <div class="h-100 bg-dark">
+                    <code>
+                      <p class="text-light mb-0 px-2 py-2">Function to calculate POWER</p>
+                      <pre class="text-warning px-2 py-2 mb-0">${getPower.toString()}</pre>
                     </code>
+                  </div>
                 </div>
                 <div class="col">
-                    <code class="h-100">
-                        <p class="bg-dark text-light mb-0 px-2 py-2">Function to calculate other attributes</p>
-                        <pre class="bg-dark text-warning px-2 py-2 mb-0 h-100">${getOther.toString()}</pre>
+                  <div class="h-100 bg-dark">
+                    <code>
+                      <p class="bg-dark text-light mb-0 px-2 py-2">Function to calculate other attributes</p>
+                      <pre class="text-warning px-2 py-2 mb-0">${getOther.toString()}</pre>
                     </code>
+                  </div>
                 </div>
             </div>
         </div>
