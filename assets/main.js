@@ -1,10 +1,9 @@
+// 572, 607, 1340, 3092, 4005, 4646, 5982, 6869, 7128, 7339, 8614, 8868,
+
 const userIdsKey = "user-ids";
 const maxInputs = 10;
-let inputIds =
-  (JSON.parse(localStorage.getItem(userIdsKey)) ||
-  [
-    //   572, 607, 1340, 3092, 4005, 4646, 5982, 6869, 7128, 7339, 8614, 8868,
-  ]).slice(0, maxInputs);
+
+let inputIds = (JSON.parse(localStorage.getItem(userIdsKey)) || []).slice(0, maxInputs);
 const gnogons = {};
 
 const el = document.createElement("div");
@@ -14,6 +13,11 @@ let inputScore;
 let list = [];
 let lines = [];
 let listOfCombinations = [];
+
+const round = (num) => {
+  const m = Number((Math.abs(num) * 100).toPrecision(15));
+  return Math.round(m) / 100 * Math.sign(num);
+};
 
 const getGnogon = async (decimal) => {
   if (gnogons[decimal]) return gnogons[[decimal]];
@@ -43,19 +47,27 @@ const getGnogon = async (decimal) => {
   return json;
 };
 
-const getPower = (power) => {
-  if (power === 96) return power * 1.1;
-  if (power === 97) return power * 1.3;
-  if (power === 98) return power * 1.5;
-  if (power === 99) return power * 1.7;
-  if (power === 100) return power * 3;
-  return power;
+const getPower = (value) => {
+  if (value === 100) return value * 3;
+  if (value === 99) return value * 1.7;
+  if (value === 98) return value * 1.5;
+  if (value === 97) return value * 1.3;
+  if (value === 96) return value * 1.1;
+  return value;
+};
+
+const getIntelligence = (value) => {
+  if (value === 100) return value * 2;
+  if (value === 99) return value;
+  if (value === 98) return value * 0.5;
+  if (value === 97) return value * 0.25;
+  return 0;
 };
 
 const getOther = (value) => {
-  if (value === 98) return value * 1.2;
-  if (value === 99) return value * 1.5;
   if (value === 100) return value * 2.2;
+  if (value === 99) return value * 1.5;
+  if (value === 98) return value * 1.2;
   return value;
 };
 
@@ -72,7 +84,7 @@ const getScore = (obj) => {
     getOther(attack) +
     getOther(defense) +
     getOther(speed) +
-    getOther(intelligence) +
+    getIntelligence(intelligence) +
     getOther(heart)
   );
 };
@@ -106,6 +118,57 @@ const getPairs = (a) => {
   const b = combine(2, a);
   const c = combine((a.length / 2) | 0, b);
   return unique(c);
+};
+
+
+const generateEveryPossibleCombinations = () => {
+  return list.reduce(
+    (acc, v, i) =>
+      acc.concat(
+        list.slice(i + 1).map((w) => ({
+          first: v,
+          second: w,
+        }))
+      ),
+    []
+  );
+};
+
+const getComputedAverage = (a, b) =>
+  Math.round((3 * Math.max(a, b) + Math.min(a, b)) / 4);
+
+const generateNewGnogon = (combination) => {
+  const { first, second } = combination;
+  combination.new = {
+    name: `${first.name} ${second.name}`,
+    attributes: {
+      POWER: getComputedAverage(
+        first.attributes.POWER,
+        second.attributes.POWER
+      ),
+      ATTACK: getComputedAverage(
+        first.attributes.ATTACK,
+        second.attributes.ATTACK
+      ),
+      DEFENSE: getComputedAverage(
+        first.attributes.DEFENSE,
+        second.attributes.DEFENSE
+      ),
+      SPEED: getComputedAverage(
+        first.attributes.SPEED,
+        second.attributes.SPEED
+      ),
+      INTELLIGENCE: getComputedAverage(
+        first.attributes.INTELLIGENCE,
+        second.attributes.INTELLIGENCE
+      ),
+      HEART: getComputedAverage(
+        first.attributes.HEART,
+        second.attributes.HEART
+      ),
+    },
+  };
+  addScore(combination.new);
 };
 
 const renderItem = (item, idx) => {
@@ -179,7 +242,7 @@ const renderItem = (item, idx) => {
                 <tr>
                     <td colspan="2">
                         Score: 
-                        <strong class="big">${score}</strong>
+                        <strong class="big">${round(score)}</strong>
                     </td>
                 </tr>
             </tfoot>
@@ -207,7 +270,7 @@ const renderInput = () => {
                 <div class="col">
                   <div class="h-100 bg-dark">
                     <code>
-                      <p class="text-light mb-0 px-2 py-2">Function to calculate POWER</p>
+                      <p class="text-light mb-0 px-2 py-2">Weight of POWER</p>
                       <pre class="text-warning px-2 py-2 mb-0">${getPower.toString()}</pre>
                     </code>
                   </div>
@@ -215,7 +278,15 @@ const renderInput = () => {
                 <div class="col">
                   <div class="h-100 bg-dark">
                     <code>
-                      <p class="bg-dark text-light mb-0 px-2 py-2">Function to calculate other attributes</p>
+                      <p class="text-light mb-0 px-2 py-2">Weight of INTELLIGENCE</p>
+                      <pre class="text-warning px-2 py-2 mb-0">${getIntelligence.toString()}</pre>
+                    </code>
+                  </div>
+                </div>
+                <div class="col">
+                  <div class="h-100 bg-dark">
+                    <code>
+                      <p class="bg-dark text-light mb-0 px-2 py-2">Weight of others</p>
                       <pre class="text-warning px-2 py-2 mb-0">${getOther.toString()}</pre>
                     </code>
                   </div>
@@ -223,7 +294,7 @@ const renderInput = () => {
             </div>
         </div>
         <div class="container mt-3">
-            <h5>Input score: ${inputScore}</h5>
+            <h5>Input score: ${round(inputScore)}</h5>
             <div class="d-flex flex-nowrap overflow-scroll align-items-center gap-2">
                 ${list.map(renderItem).join("")}
             </div>
@@ -234,8 +305,9 @@ const renderInput = () => {
 const renderOutput = () => {
   const limit = 8;
   return `\
+        <hr>
         <div class="container mt-3">
-            <h5>Best SCORE</h5>
+            <h5>Best SCORE for single merged GNOGON</h5>
             <div class="d-flex flex-nowrap overflow-scroll align-items-center gap-2">
                 ${listOfCombinations
                   .sort((a, b) => b.new.score - a.new.score)
@@ -250,7 +322,7 @@ const renderOutput = () => {
             </div>
         </div>
         <div class="container mt-3">
-            <h5>Best POWER</h5>
+            <h5>Best POWER for single merged GNOGON</h5>
             <div class="d-flex flex-nowrap overflow-scroll align-items-center gap-2">
                 ${listOfCombinations
                   .sort(
@@ -269,7 +341,7 @@ const renderOutput = () => {
         </div>
         <hr>
         <div class="container mt-3">
-            <h5>Best combination power</h5>
+            <h5>Best possible combination of items to get the best overall POWER</h5>
             ${lines
               .sort(
                 (a, b) =>
@@ -282,9 +354,10 @@ const renderOutput = () => {
                     0
                   )
               )
-              .slice(0, 5)
+              .slice(0, 3)
               .map(
-                (x) => `\
+                (x, i) => `\
+                <p class="mb-0">${i === 0 ? 'Best' : i === 1 ? 'Second best' : 'Third best'} combination</p>
                 <div class="d-flex flex-nowrap overflow-scroll align-items-center gap-2 mb-2">
                     ${x.map((l, idx) => renderItem(l.new, idx)).join("")}
                 </div>
@@ -294,16 +367,17 @@ const renderOutput = () => {
         </div>
         <hr>
         <div class="container mt-3">
-            <h5>Best combination score</h5>
+            <h5>Best possible combination of items to get the best overall SCORE</h5>
             ${lines
               .sort(
                 (a, b) =>
                   b.reduce((prev, current) => prev + current.new.score, 0) -
                   a.reduce((prev, current) => prev + current.new.score, 0)
               )
-              .slice(0, 5)
+              .slice(0, 3)
               .map(
-                (x) => `\
+                (x, i) => `\
+                <p class="mb-0">${i === 0 ? 'Best' : i === 1 ? 'Second best' : 'Third best'} combination</p>
                 <div class="d-flex flex-nowrap overflow-scroll align-items-center gap-2 mb-2">
                     ${x.map((l, idx) => renderItem(l.new, idx)).join("")}
                 </div>
@@ -344,56 +418,6 @@ const render = () => {
   });
 };
 
-const generateEveryPossibleCombinations = () => {
-  return list.reduce(
-    (acc, v, i) =>
-      acc.concat(
-        list.slice(i + 1).map((w) => ({
-          first: v,
-          second: w,
-        }))
-      ),
-    []
-  );
-};
-
-const getComputedAverage = (a, b) =>
-  Math.round((3 * Math.max(a, b) + Math.min(a, b)) / 4);
-
-const generateNewGnogon = (combination) => {
-  const { first, second } = combination;
-  combination.new = {
-    name: `${first.name} ${second.name}`,
-    attributes: {
-      POWER: getComputedAverage(
-        first.attributes.POWER,
-        second.attributes.POWER
-      ),
-      ATTACK: getComputedAverage(
-        first.attributes.ATTACK,
-        second.attributes.ATTACK
-      ),
-      DEFENSE: getComputedAverage(
-        first.attributes.DEFENSE,
-        second.attributes.DEFENSE
-      ),
-      SPEED: getComputedAverage(
-        first.attributes.SPEED,
-        second.attributes.SPEED
-      ),
-      INTELLIGENCE: getComputedAverage(
-        first.attributes.INTELLIGENCE,
-        second.attributes.INTELLIGENCE
-      ),
-      HEART: getComputedAverage(
-        first.attributes.HEART,
-        second.attributes.HEART
-      ),
-    },
-  };
-  addScore(combination.new);
-};
-
 const start = () => {
   Promise.all(inputIds.map(getGnogon)).then((plist) => {
     plist.forEach((gnogon, i) => {
@@ -422,5 +446,4 @@ const start = () => {
   });
 };
 
-render();
 start();
