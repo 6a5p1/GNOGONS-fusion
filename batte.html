@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GNG Mining</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body style="font-size: 12px">
+    <script>
+      const WIN = 1;
+      const DRAW = 0;
+      const LOSE = -1;
+      const ROUNDS = 100000;
+      const TYPE = {
+        SUPREMES: 0,
+        EMIDAS: 1,
+        GNOGONS: 2,
+        VALIDATORS: 3,
+      };
+      const HEROES = [
+        {
+          200: 111,
+        },
+        {
+          100: 1316,
+          200: 84,
+        },
+        {
+          60: 343,
+          65: 451,
+          70: 505,
+          75: 518,
+          80: 1071,
+          85: 1467,
+          90: 621,
+          91: 639,
+          92: 641,
+          93: 590,
+          94: 642,
+          95: 659,
+          96: 640,
+          97: 487,
+          98: 453,
+          99: 206,
+          100: 67,
+        },
+        {
+          59: 136,
+          60: 134,
+          61: 131,
+          62: 133,
+          63: 128,
+          64: 106,
+          65: 139,
+          66: 119,
+          67: 123,
+          68: 145,
+          69: 109,
+          70: 126,
+          71: 204,
+          72: 274,
+          73: 247,
+          74: 263,
+          75: 256,
+          76: 247,
+          77: 250,
+          78: 272,
+          79: 256,
+          80: 259,
+          81: 258,
+          82: 251,
+          83: 236,
+          84: 230,
+          85: 288,
+          86: 271,
+          87: 313,
+          88: 306,
+          89: 303,
+          90: 356,
+          91: 340,
+          92: 340,
+          93: 367,
+          94: 362,
+          95: 361,
+          96: 286,
+          97: 234,
+          98: 242,
+          99: 262,
+          100: 327,
+        },
+      ];
+
+      const getInterval = (type = TYPE.UNKNOWN, start = 0, source) => {
+        const interval = {};
+        let prev = start;
+        for (let key in source) {
+          prev += source[key];
+          interval[prev] = { type, value: +key };
+        }
+        return interval;
+      };
+      const getRand = (min, max, exclude = null) => {
+        let rand = null;
+        while (rand === null || rand === exclude) {
+          rand = Math.floor(Math.random() * (max - min)) + min;
+        }
+        return rand;
+      };
+      const getObjForId = (id, list) => {
+        let value = {};
+        for (let key in list) {
+          if (id <= key) {
+            return list[key];
+          }
+        }
+        return value;
+      };
+      const getIdForPower = (power, list) => {
+        let id = 0;
+        for (let key in list) {
+          if (power >= key) {
+            id += list[key].value;
+          }
+        }
+        return id;
+      };
+      const battle = (my_power, my_id, my_type, interval, length) => {
+        const opponent_id = getRand(1, length, my_id);
+        const { value: opponent_power, type: opponent_type } = getObjForId(opponent_id, interval);
+        if (my_power > opponent_power) return WIN;
+        if (my_power < opponent_power) return LOSE;
+        if (my_type < opponent_type) return WIN;
+        if (my_type > opponent_type) return LOSE;
+        return DRAW;
+      };
+
+      const TYPE_LIST = Object.values(TYPE);
+      const TYPE_NAMES = Object.keys(TYPE);
+      const TYPE_COLORS = ['#aaaaff', '#ffaaff', '#aaffff', '#ffffaa'];
+      const COUNT = HEROES.map((hero) => Object.values(hero).reduce((prev, current) => prev + current, 0));
+      const TOTAL_COUNT = COUNT.reduce((prev, current) => prev + current, 0);
+
+      let prevCount = 0;
+      const INTERVAL = Object.assign(
+        {},
+        ...TYPE_LIST.map((type) => {
+          const interval = getInterval(type, prevCount, HEROES[type]);
+          prevCount += COUNT[type];
+          return interval;
+        }),
+      );
+
+      const el = document.createElement('code');
+      document.body.appendChild(el);
+      const render = (t) => (el.innerHTML += t);
+
+      render(`<h4>${TYPE_LIST.map((type) => `${COUNT[type]} ${TYPE_NAMES[type]}`).join(', ')}, ${ROUNDS} battles</h4>`);
+
+      TYPE_LIST.forEach((type) => {
+        let output =
+          '<table class="table table-condensed table-hover table-dark mb-0 table-striped" style="table-layout: fixed;"><tbody>';
+        Object.keys(HEROES[type]).forEach((pwr) => {
+          const stats = {
+            [WIN]: 0,
+            [DRAW]: 0,
+            [LOSE]: 0,
+          };
+
+          const my_power = pwr;
+          const my_id = getIdForPower(my_power, HEROES[type]);
+          const my_type = type;
+
+          for (let i = 0; i < ROUNDS; i++) {
+            stats[battle(my_power, my_id, my_type, INTERVAL, TOTAL_COUNT)]++;
+          }
+
+          output += `<tr>\
+          <td style="color: ${TYPE_COLORS[type]};">${TYPE_NAMES[type]}</td>
+          <td>PWR ${my_power} (${HEROES[type][my_power]})</td>
+          <td>W: ${((stats[WIN] * 100) / ROUNDS).toFixed(2)}%</td>
+          <td>D: ${((stats[DRAW] * 100) / ROUNDS).toFixed(2)}%</td>
+          <td>L: ${((stats[LOSE] * 100) / ROUNDS).toFixed(2)}%</td>
+        `;
+        });
+        output += '</tbody></table>';
+        render(output);
+      });
+    </script>
+  </body>
+</html>
